@@ -1,8 +1,6 @@
 package org.ejectfb.balda;
 
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.ejectfb.balda.game.BaldaApp;
 
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;

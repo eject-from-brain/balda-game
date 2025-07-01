@@ -26,7 +26,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.0.0</version>
                 <configuration>
-                    <mainClass>org.ejectfb.balda.BaldaApp</mainClass> <!-- Полное имя класса -->
+                    <mainClass>org.ejectfb.balda.game.BaldaApp</mainClass> <!-- Полное имя класса -->
                 </configuration>
             </plugin>
         </plugins>
