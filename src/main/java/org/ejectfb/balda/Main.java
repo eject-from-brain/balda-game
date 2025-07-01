@@ -2,6 +2,8 @@ package org.ejectfb.balda;
 
 import org.ejectfb.balda.game.BaldaApp;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -19,10 +21,10 @@ public class Main {
         ConsoleHandler handler = new ConsoleHandler();
         handler.setLevel(Level.ALL);
         handler.setFormatter(new SimpleFormatter() {
-            private static final String FORMAT = "%s: %s%n";
+            private static final String FORMAT = "[%s] %s: %s%n";
             @Override
             public synchronized String format(java.util.logging.LogRecord record) {
-                return String.format(FORMAT,
+                return String.format(FORMAT, getNowTime(),
                         record.getLevel().getLocalizedName(),
                         record.getMessage()
                 );
@@ -31,5 +33,11 @@ public class Main {
 
         rootLogger.addHandler(handler);
         BaldaApp.main(args);
+    }
+
+    private static String getNowTime() {
+        LocalTime currentTime = LocalTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
+        return currentTime.format(formatter);
     }
 }
