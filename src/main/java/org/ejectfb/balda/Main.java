@@ -5,21 +5,31 @@ import org.ejectfb.balda.game.BaldaApp;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class Main {
     public static void main(String[] args) {
-        // Отключаем подробные логи JavaFX
-        Logger.getLogger("javafx").setLevel(Level.WARNING);
+        Logger.getLogger("javafx").setLevel(Level.OFF); // Отключаем логи JavaFX
 
-        // Настраиваем наши логи
         Logger rootLogger = Logger.getLogger("org.ejectfb.balda");
         rootLogger.setLevel(Level.ALL);
+        rootLogger.setUseParentHandlers(false);
+
 
         ConsoleHandler handler = new ConsoleHandler();
         handler.setLevel(Level.ALL);
-        rootLogger.addHandler(handler);
+        handler.setFormatter(new SimpleFormatter() {
+            private static final String FORMAT = "%s: %s%n";
+            @Override
+            public synchronized String format(java.util.logging.LogRecord record) {
+                return String.format(FORMAT,
+                        record.getLevel().getLocalizedName(),
+                        record.getMessage()
+                );
+            }
+        });
 
-        // Запуск приложения
+        rootLogger.addHandler(handler);
         BaldaApp.main(args);
     }
 }
