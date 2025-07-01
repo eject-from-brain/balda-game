@@ -33,6 +33,11 @@ public class BaldaApp extends Application {
             });
         });
         modeSelection.show();
+
+        primaryStage.setOnCloseRequest(event -> {
+            Platform.exit(); // Завершаем JavaFX
+            System.exit(0);  // Завершаем процесс JVM
+        });
     }
 
     private void startServer(Stage primaryStage) throws IOException {
