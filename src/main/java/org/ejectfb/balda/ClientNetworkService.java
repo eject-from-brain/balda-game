@@ -1,14 +1,17 @@
 package org.ejectfb.balda;
 
 import javafx.application.Platform;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientNetworkService implements NetworkService {
+    private static final Logger logger = Logger.getLogger(ClientNetworkService.class.getName());
+
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -17,60 +20,84 @@ public class ClientNetworkService implements NetworkService {
 
     @Override
     public void connect(String address) throws IOException {
-        socket = new Socket(address, 5555);
-        out = new ObjectOutputStream(socket.getOutputStream());
-        in = new ObjectInputStream(socket.getInputStream());
-        isConnected = true;
+        try {
+            logger.log(Level.INFO, "Попытка подключения к серверу по адресу: {0}:5555", address);
+            socket = new Socket(address, 5555);
+            out = new ObjectOutputStream(socket.getOutputStream());
+            in = new ObjectInputStream(socket.getInputStream());
+            isConnected = true;
 
-        // Поток для получения обновлений от сервера
-        new Thread(this::receiveUpdates).start();
+            logger.info("Успешное подключение к серверу");
+            logger.info("Запуск потока для получения обновлений от сервера");
+
+            new Thread(this::receiveUpdates).start();
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "Ошибка подключения к серверу: " + e.getMessage(), e);
+            throw e;
+        }
     }
 
     @Override
     public void disconnect() {
+        logger.info("Отключение клиента...");
         try {
             isConnected = false;
             if (out != null) out.close();
             if (in != null) in.close();
-            if (socket != null) socket.close();
+            if (socket != null && !socket.isClosed()) {
+                socket.close();
+                logger.info("Сокет клиента успешно закрыт");
+            }
         } catch (IOException e) {
-            System.err.println("Error while disconnecting: " + e.getMessage());
+            logger.log(Level.SEVERE, "Ошибка при отключении: " + e.getMessage(), e);
         }
     }
 
     @Override
     public void setGameStateListener(Consumer<BaldaGame> listener) {
+        logger.info("Установка слушателя состояния игры");
         this.gameStateListener = listener;
     }
 
     private void receiveUpdates() {
+        logger.info("Поток получения обновлений запущен");
         try {
             while (isConnected) {
                 BaldaGame gameState = (BaldaGame) in.readObject();
+                logger.info("Получено состояние: " +
+                        "размер=" + gameState.getGridSize() +
+                        ", игрок=" + gameState.getCurrentPlayer());
+
                 if (gameStateListener != null) {
-                    Platform.runLater(() -> gameStateListener.accept(gameState));
+                    Platform.runLater(() -> {
+                        logger.info("Обновление UI с новым состоянием игры");
+                        gameStateListener.accept(gameState); // Убедитесь, что это приводит к обновлению UI
+                    });
                 }
             }
         } catch (Exception e) {
             if (isConnected) {
-                System.err.println("Connection error: " + e.getMessage());
+                logger.log(Level.SEVERE, "Ошибка в потоке получения обновлений: " + e.getMessage(), e);
                 disconnect();
             }
         }
+        logger.info("Поток получения обновлений завершен");
     }
 
     @Override
     public void sendGameState(BaldaGame game) {
         if (!isConnected) {
-            System.err.println("Cannot send game state - not connected");
+            logger.warning("Попытка отправить состояние игры без подключения");
             return;
         }
 
         try {
+            logger.info("Отправка состояния игры на сервер");
             out.writeObject(game);
             out.flush();
+            logger.info("Состояние игры успешно отправлено");
         } catch (IOException e) {
-            System.err.println("Failed to send game state: " + e.getMessage());
+            logger.log(Level.SEVERE, "Ошибка отправки состояния игры: " + e.getMessage(), e);
             disconnect();
         }
     }

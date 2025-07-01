@@ -10,8 +10,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class GameUI {
+
+    private static final Logger logger = Logger.getLogger(GameUI.class.getName());
+
     private GridPane gameGrid;
     private BaldaGame game;
     private NetworkService networkService;
@@ -20,6 +24,15 @@ public class GameUI {
     public GameUI(BaldaGame game, NetworkService networkService) {
         this.game = game;
         this.networkService = networkService;
+
+        if (networkService != null) {
+            networkService.setGameStateListener(gameState -> {
+                logger.info("Получено новое состояние игры. Текущий размер сетки: " + gameState.getGridSize());
+                this.game = gameState;
+                updateGrid();
+            });
+        }
+
         initializeUI();
     }
 
@@ -41,6 +54,10 @@ public class GameUI {
     }
 
     public void updateGrid() {
+        logger.info("=== Начало обновления сетки ===");
+        logger.info("Текущий игрок: " + game.getCurrentPlayer());
+        logger.info("Размер сетки: " + game.getGridSize());
+
         gameGrid.getChildren().clear();
 
         for (int i = 0; i < game.getGridSize(); i++) {
@@ -55,6 +72,8 @@ public class GameUI {
                 gameGrid.add(cell, j, i);
             }
         }
+
+        logger.info("Сетка обновлена. Количество кнопок: " + gameGrid.getChildren().size());
     }
 
     private void handleCellClick(int x, int y) {
