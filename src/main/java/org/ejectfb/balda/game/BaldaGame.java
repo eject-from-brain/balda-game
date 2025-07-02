@@ -6,14 +6,20 @@ import java.util.List;
 
 public class BaldaGame implements Serializable {
     private char[][] grid;
-    private List<String> usedWords;
+    private List<String> serverWords;
+    private List<String> clientWords;
     private String currentWord;
     private int currentPlayer;
-    private int gridSize = 7; // Начальный размер
+    private int gridSize = 7;
+    private String gameName;
+    private boolean isServerTurn = true;
+    private boolean clientConnected = false;
 
-    public BaldaGame() {
+    public BaldaGame(String gameName) {
+        this.gameName = gameName;
         grid = new char[gridSize][gridSize];
-        usedWords = new ArrayList<>();
+        serverWords = new ArrayList<>();
+        clientWords = new ArrayList<>();
         initializeGrid();
     }
 
@@ -25,28 +31,9 @@ public class BaldaGame implements Serializable {
         }
     }
 
-    // Новые геттеры
-    public int getGridSize() {
-        return gridSize;
-    }
-
-    public char getLetterAt(int x, int y) {
-        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
-            return grid[x][y];
-        }
-        return ' '; // или можно бросить исключение
-    }
-
-    public List<String> getUsedWords() {
-        return new ArrayList<>(usedWords);
-    }
-
-    public int getCurrentPlayer() {
-        return currentPlayer;
-    }
-
-    public String getCurrentWord() {
-        return currentWord;
+    public boolean canMakeMove(boolean isServer) {
+        return (isServer && isServerTurn && clientConnected) ||
+                (!isServer && !isServerTurn);
     }
 
     public boolean makeMove(int x, int y, char letter, String word) {
@@ -55,10 +42,15 @@ public class BaldaGame implements Serializable {
         }
 
         grid[x][y] = letter;
-        usedWords.add(word);
+        if (isServerTurn) {
+            serverWords.add(word);
+        } else {
+            clientWords.add(word);
+        }
         currentWord = word;
 
         expandGridIfNeeded(x, y);
+        isServerTurn = !isServerTurn;
         currentPlayer = (currentPlayer + 1) % 2;
 
         return true;
@@ -69,8 +61,7 @@ public class BaldaGame implements Serializable {
             return false;
         }
         if (grid[x][y] != ' ') return false;
-        if (usedWords.contains(word)) return false;
-        // Дополнительные проверки по правилам Балды
+        if (clientWords.contains(word) || serverWords.contains(word)) return false;
         return true;
     }
 
@@ -84,14 +75,12 @@ public class BaldaGame implements Serializable {
             int newSize = gridSize + 1;
             char[][] newGrid = new char[newSize][newSize];
 
-            // Инициализация новой сетки
             for (int i = 0; i < newSize; i++) {
                 for (int j = 0; j < newSize; j++) {
                     newGrid[i][j] = ' ';
                 }
             }
 
-            // Копирование старой сетки
             int offsetX = expandTop ? 1 : 0;
             int offsetY = expandLeft ? 1 : 0;
 
@@ -105,4 +94,44 @@ public class BaldaGame implements Serializable {
             gridSize = newSize;
         }
     }
+
+    public int getGridSize() {
+        return gridSize;
+    }
+
+    public List<String> getServerWords() {
+        return new ArrayList<>(serverWords);
+    }
+
+    public List<String> getClientWords() {
+        return new ArrayList<>(clientWords);
+    }
+
+    public String getGameName() {
+        return gameName;
+    }
+
+    public char getLetterAt(int x, int y) {
+        if (x >= 0 && x < gridSize && y >= 0 && y < gridSize) {
+            return grid[x][y];
+        }
+        return ' ';
+    }
+
+    public int getCurrentPlayer() {
+        return currentPlayer;
+    }
+
+    public String getCurrentWord() {
+        return currentWord;
+    }
+
+    public void setClientConnected(boolean connected) {
+        this.clientConnected = connected;
+    }
+
+    public boolean isServerTurn() {
+        return isServerTurn;
+    }
+
 }

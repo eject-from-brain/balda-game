@@ -1,12 +1,7 @@
 package org.ejectfb.balda.game;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import org.ejectfb.balda.network.NetworkService;
 
@@ -21,16 +16,23 @@ public class GameUI {
     private BaldaGame game;
     private NetworkService networkService;
     private VBox root;
+    private GameSaver gameSaver;
+    private boolean isServer;
+    private ListView<String> serverWordsList;
+    private ListView<String> clientWordsList;
+    private Text playerInfo;
 
-    public GameUI(BaldaGame game, NetworkService networkService) {
+    public GameUI(BaldaGame game, NetworkService networkService, boolean isServer, GameSaver gameSaver) {
         this.game = game;
         this.networkService = networkService;
+        this.isServer = isServer;
+        this.gameSaver = gameSaver;
 
         if (networkService != null) {
             networkService.setGameStateListener(gameState -> {
-                logger.info("Получено новое состояние игры. Текущий размер сетки: " + gameState.getGridSize());
+                logger.info("Получено новое состояние игры");
                 this.game = gameState;
-                updateGrid();
+                updateUI();
             });
         }
 
@@ -43,22 +45,50 @@ public class GameUI {
         gameGrid.setHgap(5);
         gameGrid.setVgap(5);
 
-        // Добавляем информацию о текущем игроке
-        Text playerInfo = new Text("Ход игрока: " + (game.getCurrentPlayer() + 1));
+        HBox infoPanel = new HBox(10);
+        playerInfo = new Text("Ход игрока: " + (game.getCurrentPlayer() + 1)); // Инициализируем поле
+        Text gameInfo = new Text("Игра: " + game.getGameName());
+        infoPanel.getChildren().addAll(playerInfo, gameInfo);
 
-        // Добавляем кнопку обновления
+        HBox wordsPanel = new HBox(10);
+        serverWordsList = new ListView<>();
+        serverWordsList.setPrefWidth(200);
+        serverWordsList.setPlaceholder(new Label("Слова сервера"));
+
+        clientWordsList = new ListView<>();
+        clientWordsList.setPrefWidth(200);
+        clientWordsList.setPlaceholder(new Label("Слова клиента"));
+
+        wordsPanel.getChildren().addAll(serverWordsList, clientWordsList);
+
+        HBox buttonPanel = new HBox(10);
         Button refreshButton = new Button("Обновить");
-        refreshButton.setOnAction(e -> updateGrid());
+        refreshButton.setOnAction(e -> updateUI());
 
-        root.getChildren().addAll(playerInfo, refreshButton, gameGrid);
-        updateGrid();
+        Button saveButton = new Button("Сохранить");
+        saveButton.setOnAction(e -> {
+            gameSaver.saveGame(game);
+            new Alert(Alert.AlertType.INFORMATION, "Игра сохранена", ButtonType.OK).showAndWait();
+        });
+
+        buttonPanel.getChildren().addAll(refreshButton, saveButton);
+
+        root.getChildren().addAll(infoPanel, gameGrid, wordsPanel, buttonPanel);
+        updateUI();
     }
 
-    public void updateGrid() {
-        logger.info("=== Начало обновления сетки ===");
-        logger.info("Текущий игрок: " + game.getCurrentPlayer());
-        logger.info("Размер сетки: " + game.getGridSize());
+    private void updateUI() {
+        updateGrid();
+        updateWordsLists();
 
+        if (isServer) {
+            playerInfo.setText(game.isServerTurn() ? "Ваш ход (Сервер)" : "Ход клиента");
+        } else {
+            playerInfo.setText(game.isServerTurn() ? "Ход сервера" : "Ваш ход (Клиент)");
+        }
+    }
+
+    private void updateGrid() {
         gameGrid.getChildren().clear();
 
         for (int i = 0; i < game.getGridSize(); i++) {
@@ -73,11 +103,18 @@ public class GameUI {
                 gameGrid.add(cell, j, i);
             }
         }
+    }
 
-        logger.info("Сетка обновлена. Количество кнопок: " + gameGrid.getChildren().size());
+    private void updateWordsLists() {
+        serverWordsList.getItems().setAll(game.getServerWords());
+        clientWordsList.getItems().setAll(game.getClientWords());
     }
 
     private void handleCellClick(int x, int y) {
+        if (!game.canMakeMove(isServer)) {
+            showAlert("Сейчас не ваш ход!");
+            return;
+        }
         if (game.getLetterAt(x, y) != ' ') {
             showAlert("Эта клетка уже занята!");
             return;
@@ -102,8 +139,8 @@ public class GameUI {
                 String word = wordResult.get().toUpperCase();
 
                 if (game.makeMove(x, y, letter, word)) {
-                    // Если ход успешен, обновляем UI и отправляем состояние на сервер
                     updateGrid();
+                    updateUI();
                     if (networkService != null) {
                         networkService.sendGameState(game);
                     }

@@ -5,6 +5,8 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
 import org.ejectfb.balda.mode.ModeSelectionView;
@@ -14,16 +16,20 @@ import org.ejectfb.balda.network.NetworkService;
 import org.ejectfb.balda.network.ServerNetworkService;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 public class BaldaApp extends Application {
+
+    private GameSaver gameSaver = new GameSaver();
+
     @Override
     public void start(Stage primaryStage) {
         ModeSelectionView modeSelection = new ModeSelectionView(mode -> {
             Platform.runLater(() -> {
                 try {
                     if (mode == ModeSelector.Mode.SERVER) {
-                        startServer(primaryStage);
+                        showServerGameSelection(primaryStage);
                     } else {
                         startClient(primaryStage);
                     }
@@ -35,21 +41,20 @@ public class BaldaApp extends Application {
         modeSelection.show();
 
         primaryStage.setOnCloseRequest(event -> {
-            Platform.exit(); // Завершаем JavaFX
-            System.exit(0);  // Завершаем процесс JVM
+            Platform.exit();
+            System.exit(0);
         });
     }
 
-    private void startServer(Stage primaryStage) throws IOException {
+    private void startServer(Stage primaryStage, BaldaGame game) throws IOException {
         NetworkService networkService = new ServerNetworkService();
         networkService.connect("localhost");
 
-        BaldaGame game = new BaldaGame();
-        GameUI gameUI = new GameUI(game, networkService);
+        GameUI gameUI = new GameUI(game, networkService, true, gameSaver);
 
-        Scene scene = new Scene(gameUI.getRoot(), 600, 600);
+        Scene scene = new Scene(gameUI.getRoot(), 700, 700); // Увеличим размер для отображения слов
         primaryStage.setScene(scene);
-        primaryStage.setTitle("Балда (Сервер)");
+        primaryStage.setTitle("Балда (Сервер) - " + game.getGameName());
         primaryStage.show();
     }
 
@@ -65,8 +70,9 @@ public class BaldaApp extends Application {
                 NetworkService networkService = new ClientNetworkService();
                 networkService.connect(ip);
 
-                BaldaGame game = new BaldaGame();
-                GameUI gameUI = new GameUI(game, networkService);
+                String clientGameName = "Игра с: " + ip;
+                BaldaGame game = new BaldaGame(clientGameName);
+                GameUI gameUI = new GameUI(game, networkService, false, null);
 
                 Scene scene = new Scene(gameUI.getRoot(), 600, 600);
                 primaryStage.setScene(scene);
@@ -78,6 +84,44 @@ public class BaldaApp extends Application {
                 alert.setHeaderText("Не удалось подключиться к серверу");
                 alert.setContentText(e.getMessage());
                 alert.showAndWait();
+            }
+        });
+    }
+
+    private void showServerGameSelection(Stage primaryStage) {
+        List<String> savedGames = gameSaver.getSavedGames();
+
+        ChoiceDialog<String> dialog = new ChoiceDialog<>("Новая игра", savedGames);
+        dialog.setTitle("Выбор игры");
+        dialog.setHeaderText("Выберите существующую игру или создайте новую");
+        dialog.setContentText("Игра:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(gameName -> {
+            try {
+                BaldaGame game;
+                if (gameName.equals("Новая игра")) {
+                    TextInputDialog nameDialog = new TextInputDialog("Игра1");
+                    nameDialog.setTitle("Новая игра");
+                    nameDialog.setHeaderText("Введите название новой игры");
+                    nameDialog.setContentText("Название:");
+
+                    Optional<String> nameResult = nameDialog.showAndWait();
+                    if (nameResult.isPresent()) {
+                        game = new BaldaGame(nameResult.get());
+                    } else {
+                        return;
+                    }
+                } else {
+                    game = gameSaver.loadGame(gameName);
+                    if (game == null) {
+                        new Alert(Alert.AlertType.ERROR, "Не удалось загрузить игру", ButtonType.OK).showAndWait();
+                        return;
+                    }
+                }
+                startServer(primaryStage, game);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         });
     }

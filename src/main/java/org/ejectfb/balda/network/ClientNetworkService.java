@@ -66,14 +66,12 @@ public class ClientNetworkService implements NetworkService {
         try {
             while (isConnected) {
                 BaldaGame gameState = (BaldaGame) in.readObject();
-                logger.info("Получено состояние: " +
-                        "размер=" + gameState.getGridSize() +
-                        ", игрок=" + gameState.getCurrentPlayer());
+                gameState.setClientConnected(true); // Клиент всегда подключен, когда получает обновления
 
                 if (gameStateListener != null) {
                     Platform.runLater(() -> {
                         logger.info("Обновление UI с новым состоянием игры");
-                        gameStateListener.accept(gameState); // Убедитесь, что это приводит к обновлению UI
+                        gameStateListener.accept(gameState);
                     });
                 }
             }

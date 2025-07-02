@@ -1,22 +1,28 @@
 package org.ejectfb.balda.game;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class GameSaver {
-    private static final String SAVES_DIR = "saves";
+    private static final String SAVES_DIR = System.getProperty("user.home") + File.separator + "balda-game";
 
     public GameSaver() {
-        // Создание папки saves, если её нет
-        new File(SAVES_DIR).mkdirs();
+        try {
+            Files.createDirectories(Paths.get(SAVES_DIR));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void saveGame(BaldaGame game, String filename) {
+    public void saveGame(BaldaGame game) {
         try (ObjectOutputStream oos = new ObjectOutputStream(
-                new FileOutputStream(SAVES_DIR + File.separator + filename + ".balda"))) {
+                new FileOutputStream(SAVES_DIR + File.separator + game.getGameName() + ".balda"))) {
             oos.writeObject(game);
         } catch (IOException e) {
             e.printStackTrace();
