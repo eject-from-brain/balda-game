@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 public class ServerNetworkService implements NetworkService {
     private static final Logger logger = Logger.getLogger(ServerNetworkService.class.getName());
 
+    private BaldaGame currentGame;
     private ServerSocket serverSocket;
     private Socket clientSocket;
     private ObjectOutputStream out;
@@ -22,6 +23,10 @@ public class ServerNetworkService implements NetworkService {
     private Consumer<BaldaGame> gameStateListener;
     private volatile boolean isRunning = false;
     private volatile boolean isClientConnected = false;
+
+    public ServerNetworkService(BaldaGame currentGame) {
+        this.currentGame = currentGame;
+    }
 
     @Override
     public void connect(String address) throws IOException {
@@ -76,7 +81,7 @@ public class ServerNetworkService implements NetworkService {
 
             if (gameStateListener != null) {
                 Platform.runLater(() -> {
-                    BaldaGame game = new BaldaGame("Новая игра");
+                    BaldaGame game = new BaldaGame(currentGame.getGameName(), currentGame.getStartWord());
                     game.setClientConnected(true);
                     gameStateListener.accept(game);
                 });

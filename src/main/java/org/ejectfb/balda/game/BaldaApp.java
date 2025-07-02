@@ -47,7 +47,7 @@ public class BaldaApp extends Application {
     }
 
     private void startServer(Stage primaryStage, BaldaGame game) throws IOException {
-        NetworkService networkService = new ServerNetworkService();
+        NetworkService networkService = new ServerNetworkService(game);
         networkService.connect("localhost");
 
         GameUI gameUI = new GameUI(game, networkService, true, gameSaver);
@@ -70,8 +70,8 @@ public class BaldaApp extends Application {
                 NetworkService networkService = new ClientNetworkService();
                 networkService.connect(ip);
 
-                String clientGameName = "Игра с: " + ip;
-                BaldaGame game = new BaldaGame(clientGameName);
+                String clientGameName = "Игра против " + ip;
+                BaldaGame game = new BaldaGame(clientGameName, "ЖДИ");
                 GameUI gameUI = new GameUI(game, networkService, false, null);
 
                 Scene scene = new Scene(gameUI.getRoot(), 600, 600);
@@ -108,7 +108,17 @@ public class BaldaApp extends Application {
 
                     Optional<String> nameResult = nameDialog.showAndWait();
                     if (nameResult.isPresent()) {
-                        game = new BaldaGame(nameResult.get());
+                        TextInputDialog wordDialog = new TextInputDialog("балда");
+                        wordDialog.setTitle("Стартовое слово");
+                        wordDialog.setHeaderText("Введите стартовое слово");
+                        wordDialog.setContentText("Слово:");
+
+                        Optional<String> wordResult = wordDialog.showAndWait();
+                        if (wordResult.isPresent() && !wordResult.get().isEmpty()) {
+                            game = new BaldaGame(nameResult.get(), wordResult.get());
+                        } else {
+                            return;
+                        }
                     } else {
                         return;
                     }

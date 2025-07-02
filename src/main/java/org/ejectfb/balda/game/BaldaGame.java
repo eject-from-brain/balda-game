@@ -10,24 +10,36 @@ public class BaldaGame implements Serializable {
     private List<String> clientWords;
     private String currentWord;
     private int currentPlayer;
-    private int gridSize = 7;
+    private int gridSize;
     private String gameName;
     private boolean isServerTurn = true;
     private boolean clientConnected = false;
+    private String startWord;
 
-    public BaldaGame(String gameName) {
+    public BaldaGame(String gameName, String startWord) {
         this.gameName = gameName;
-        grid = new char[gridSize][gridSize];
-        serverWords = new ArrayList<>();
-        clientWords = new ArrayList<>();
+        this.startWord = startWord;
+        this.serverWords = new ArrayList<>();
+        this.clientWords = new ArrayList<>();
         initializeGrid();
     }
 
     private void initializeGrid() {
+        int minSize = Math.max(startWord.length() + 2, 5); // Размер сетки = длина слова + 2, но не меньше 5
+        gridSize = minSize;
+        grid = new char[gridSize][gridSize];
+
         for (int i = 0; i < gridSize; i++) {
             for (int j = 0; j < gridSize; j++) {
                 grid[i][j] = ' ';
             }
+        }
+
+        int centerRow = gridSize / 2;
+        int centerCol = (gridSize - startWord.length()) / 2;
+
+        for (int i = 0; i < startWord.length(); i++) {
+            grid[centerRow][centerCol + i] = startWord.toUpperCase().charAt(i);
         }
     }
 
@@ -134,4 +146,7 @@ public class BaldaGame implements Serializable {
         return isServerTurn;
     }
 
+    public String getStartWord() {
+        return startWord;
+    }
 }
