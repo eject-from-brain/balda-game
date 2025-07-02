@@ -1,7 +1,10 @@
 package org.ejectfb.balda.game;
 
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import org.ejectfb.balda.network.NetworkService;
 
@@ -9,7 +12,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 public class GameUI {
-
     private static final Logger logger = Logger.getLogger(GameUI.class.getName());
 
     private GridPane gameGrid;
@@ -41,40 +43,108 @@ public class GameUI {
 
     private void initializeUI() {
         root = new VBox(10);
-        gameGrid = new GridPane();
-        gameGrid.setHgap(5);
-        gameGrid.setVgap(5);
+        root.setStyle("-fx-background-color: #1a1a1a; -fx-padding: 20;");
+        root.setAlignment(Pos.TOP_CENTER);
 
-        HBox infoPanel = new HBox(10);
-        playerInfo = new Text("Ход игрока: " + (game.getCurrentPlayer() + 1)); // Инициализируем поле
+        // Заголовок и информация об игре
+        Text title = new Text("БАЛДА");
+        title.setStyle("-fx-font-size: 42px; -fx-fill: #FFA726; -fx-font-family: 'Segoe UI Semibold', 'Roboto Medium', sans-serif;");
+
         Text gameInfo = new Text("Игра: " + game.getGameName());
-        infoPanel.getChildren().addAll(playerInfo, gameInfo);
+        gameInfo.setStyle("-fx-font-size: 20px; -fx-fill: #aaaaaa; -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
 
-        HBox wordsPanel = new HBox(10);
-        serverWordsList = new ListView<>();
-        serverWordsList.setPrefWidth(200);
-        serverWordsList.setPlaceholder(new Label("Слова сервера"));
+        playerInfo = new Text();
+        playerInfo.setStyle("-fx-font-size: 18px; -fx-fill: #e0e0e0; -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
 
-        clientWordsList = new ListView<>();
-        clientWordsList.setPrefWidth(200);
-        clientWordsList.setPlaceholder(new Label("Слова клиента"));
+        VBox textContainer = new VBox(5, title, gameInfo, playerInfo);
+        textContainer.setAlignment(Pos.CENTER);
 
-        wordsPanel.getChildren().addAll(serverWordsList, clientWordsList);
+        // Игровое поле
+        gameGrid = new GridPane();
+        gameGrid.setHgap(8);
+        gameGrid.setVgap(8);
+        gameGrid.setAlignment(Pos.CENTER);
 
-        HBox buttonPanel = new HBox(10);
-        Button refreshButton = new Button("Обновить");
-        refreshButton.setOnAction(e -> updateUI());
+        // Создаем блоки для списков слов
+        VBox myWordsBox = new VBox(5);
+        Text myWordsLabel = new Text(isServer ? "Мои слова" : "Слова противника");
+        myWordsLabel.setStyle("-fx-font-size: 16px; -fx-fill: white; -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
+        serverWordsList = createStyledListView();
+        myWordsBox.getChildren().addAll(myWordsLabel, serverWordsList);
+        myWordsBox.setAlignment(Pos.CENTER);
 
-        Button saveButton = new Button("Сохранить");
-        saveButton.setOnAction(e -> {
-            gameSaver.saveGame(game);
-            new Alert(Alert.AlertType.INFORMATION, "Игра сохранена", ButtonType.OK).showAndWait();
-        });
+        VBox opponentWordsBox = new VBox(5);
+        Text opponentWordsLabel = new Text(isServer ? "Слова противника" : "Мои слова");
+        opponentWordsLabel.setStyle("-fx-font-size: 16px; -fx-fill: white; -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
+        clientWordsList = createStyledListView();
+        opponentWordsBox.getChildren().addAll(opponentWordsLabel, clientWordsList);
+        opponentWordsBox.setAlignment(Pos.CENTER);
 
-        buttonPanel.getChildren().addAll(refreshButton, saveButton);
+        HBox wordsPanel = new HBox(20, isServer ? myWordsBox : opponentWordsBox,
+                isServer ? opponentWordsBox : myWordsBox);
+        wordsPanel.setAlignment(Pos.CENTER);
 
-        root.getChildren().addAll(infoPanel, gameGrid, wordsPanel, buttonPanel);
+        // Кнопка сохранения
+        HBox buttonPanel = new HBox();
+        buttonPanel.setAlignment(Pos.CENTER);
+        if (isServer || gameSaver != null) {
+            Button saveButton = createStyledButton("💾 Сохранить");
+            saveButton.setStyle("-fx-background-color: #FFA726; -fx-text-fill: #1a1a1a; -fx-font-weight: bold;");
+            saveButton.setOnAction(e -> {
+                if (gameSaver != null) {
+                    gameSaver.saveGame(game);
+                    showAlert("Информация", "Игра сохранена");
+                }
+            });
+            buttonPanel.getChildren().add(saveButton);
+        }
+
+        // Скрытая подпись
+        Text watermark = new Text("made by EjectFB");
+        watermark.setStyle("-fx-font-size: 10px; -fx-fill: #333; -fx-font-style: italic;");
+        StackPane.setAlignment(watermark, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(watermark, new Insets(0, 10, 10, 0));
+
+        StackPane mainContainer = new StackPane();
+        mainContainer.getChildren().addAll(root, watermark);
+        root.getChildren().addAll(textContainer, gameGrid, wordsPanel, buttonPanel);
         updateUI();
+    }
+
+    private ListView<String> createStyledListView() {
+        ListView<String> listView = new ListView<>();
+        listView.setPrefWidth(250);
+        listView.setPrefHeight(150);
+        listView.setStyle("-fx-control-inner-background: #2d2d2d; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-border-color: #3d3d3d; " +
+                "-fx-border-radius: 5; " +
+                "-fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
+        return listView;
+    }
+
+    private Button createStyledButton(String text) {
+        Button btn = new Button(text);
+        btn.setStyle("-fx-background-color: #2d2d2d; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 8 16; " +
+                "-fx-background-radius: 5; " +
+                "-fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
+        btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color: #FFA726; " +
+                "-fx-text-fill: #1a1a1a; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 8 16; " +
+                "-fx-background-radius: 5; " +
+                "-fx-font-weight: bold;"));
+        btn.setOnMouseExited(e -> btn.setStyle("-fx-background-color: #2d2d2d; " +
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 14px; " +
+                "-fx-padding: 8 16; " +
+                "-fx-background-radius: 5; " +
+                "-fx-font-family: 'Segoe UI', 'Roboto', sans-serif;"));
+        return btn;
     }
 
     private void updateUI() {
@@ -82,9 +152,9 @@ public class GameUI {
         updateWordsLists();
 
         if (isServer) {
-            playerInfo.setText(game.isServerTurn() ? "Ваш ход (Сервер)" : "Ход клиента");
+            playerInfo.setText(game.isServerTurn() ? "▶ Мой ход" : "⏸ Ход противника");
         } else {
-            playerInfo.setText(game.isServerTurn() ? "Ход сервера" : "Ваш ход (Клиент)");
+            playerInfo.setText(game.isServerTurn() ? "⏸ Ход противника" : "▶ Мой ход");
         }
     }
 
@@ -95,7 +165,32 @@ public class GameUI {
             for (int j = 0; j < game.getGridSize(); j++) {
                 char letter = game.getLetterAt(i, j);
                 Button cell = new Button(letter == ' ' ? "" : String.valueOf(letter));
-                cell.setMinSize(40, 40);
+                cell.setMinSize(50, 50);
+                cell.setStyle("-fx-font-size: 18px; " +
+                        "-fx-background-color: #2d2d2d; " +
+                        "-fx-text-fill: white; " +
+                        "-fx-border-color: #3d3d3d; " +
+                        "-fx-border-radius: 3; " +
+                        "-fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
+
+                cell.setOnMouseEntered(e -> {
+                    if (cell.getText().isEmpty()) {
+                        cell.setStyle("-fx-font-size: 18px; " +
+                                "-fx-background-color: #FFA726; " +
+                                "-fx-text-fill: #1a1a1a; " +
+                                "-fx-border-color: #FFA726; " +
+                                "-fx-border-radius: 3; " +
+                                "-fx-font-weight: bold;");
+                    }
+                });
+                cell.setOnMouseExited(e -> {
+                    cell.setStyle("-fx-font-size: 18px; " +
+                            "-fx-background-color: #2d2d2d; " +
+                            "-fx-text-fill: white; " +
+                            "-fx-border-color: #3d3d3d; " +
+                            "-fx-border-radius: 3; " +
+                            "-fx-font-family: 'Segoe UI', 'Roboto', sans-serif;");
+                });
 
                 int finalI = i;
                 int finalJ = j;
@@ -106,17 +201,23 @@ public class GameUI {
     }
 
     private void updateWordsLists() {
-        serverWordsList.getItems().setAll(game.getServerWords());
-        clientWordsList.getItems().setAll(game.getClientWords());
+        if (isServer) {
+            serverWordsList.getItems().setAll(game.getServerWords());
+            clientWordsList.getItems().setAll(game.getClientWords());
+        } else {
+            // На клиенте меняем местами отображение слов
+            serverWordsList.getItems().setAll(game.getClientWords());
+            clientWordsList.getItems().setAll(game.getServerWords());
+        }
     }
 
     private void handleCellClick(int x, int y) {
         if (!game.canMakeMove(isServer)) {
-            showAlert("Сейчас не ваш ход!");
+            showAlert("Ошибка", "Сейчас не ваш ход!");
             return;
         }
         if (game.getLetterAt(x, y) != ' ') {
-            showAlert("Эта клетка уже занята!");
+            showAlert("Ошибка", "Эта клетка уже занята!");
             return;
         }
 
@@ -124,6 +225,7 @@ public class GameUI {
         letterDialog.setTitle("Ваш ход");
         letterDialog.setHeaderText("Введите букву");
         letterDialog.setContentText("Буква:");
+        styleDialog(letterDialog.getDialogPane());
 
         Optional<String> letterResult = letterDialog.showAndWait();
         if (letterResult.isPresent() && letterResult.get().length() == 1) {
@@ -133,30 +235,44 @@ public class GameUI {
             wordDialog.setTitle("Ваш ход");
             wordDialog.setHeaderText("Введите слово");
             wordDialog.setContentText("Слово:");
+            styleDialog(wordDialog.getDialogPane());
 
             Optional<String> wordResult = wordDialog.showAndWait();
             if (wordResult.isPresent() && !wordResult.get().isEmpty()) {
                 String word = wordResult.get().toUpperCase();
 
                 if (game.makeMove(x, y, letter, word)) {
-                    updateGrid();
                     updateUI();
                     if (networkService != null) {
                         networkService.sendGameState(game);
                     }
                 } else {
-                    showAlert("Недопустимый ход!");
+                    showAlert("Ошибка", "Недопустимый ход!");
                 }
             }
         }
     }
 
-    private void showAlert(String message) {
+    private void styleDialog(DialogPane dialogPane) {
+        dialogPane.getStylesheets().add(getClass().getResource("/dark-theme.css").toExternalForm());
+    }
+
+    private void showAlert(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.WARNING, message, ButtonType.OK);
+        alert.setTitle(title);
+        styleDialog(alert.getDialogPane());
         alert.showAndWait();
     }
 
     public Pane getRoot() {
-        return root;
+        // Возвращаем mainContainer вместо root
+        StackPane mainContainer = new StackPane();
+        Text watermark = new Text("made by EjectFB");
+        watermark.setStyle("-fx-font-size: 10px; -fx-fill: #333; -fx-font-style: italic;");
+        StackPane.setAlignment(watermark, Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(watermark, new Insets(0, 10, 10, 0));
+
+        mainContainer.getChildren().addAll(root, watermark);
+        return mainContainer;
     }
 }

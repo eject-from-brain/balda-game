@@ -1,13 +1,10 @@
 package org.ejectfb.balda.game;
 
-
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.ChoiceDialog;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.stage.Stage;
 import org.ejectfb.balda.mode.ModeSelectionView;
 import org.ejectfb.balda.mode.ModeSelector;
@@ -20,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class BaldaApp extends Application {
-
     private GameSaver gameSaver = new GameSaver();
 
     @Override
@@ -52,7 +48,8 @@ public class BaldaApp extends Application {
 
         GameUI gameUI = new GameUI(game, networkService, true, gameSaver);
 
-        Scene scene = new Scene(gameUI.getRoot(), 700, 700); // Увеличим размер для отображения слов
+        Scene scene = new Scene(gameUI.getRoot(), 800, 700);
+        scene.getStylesheets().add(getClass().getResource("/dark-theme.css").toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.setTitle("Балда (Сервер) - " + game.getGameName());
         primaryStage.show();
@@ -63,6 +60,7 @@ public class BaldaApp extends Application {
         dialog.setTitle("Подключение к серверу");
         dialog.setHeaderText("Введите IP адрес сервера");
         dialog.setContentText("IP:");
+        styleDialog(dialog.getDialogPane());
 
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(ip -> {
@@ -74,16 +72,13 @@ public class BaldaApp extends Application {
                 BaldaGame game = new BaldaGame(clientGameName, "ЖДИ");
                 GameUI gameUI = new GameUI(game, networkService, false, null);
 
-                Scene scene = new Scene(gameUI.getRoot(), 600, 600);
+                Scene scene = new Scene(gameUI.getRoot(), 800, 700);
+                scene.getStylesheets().add(getClass().getResource("/dark-theme.css").toExternalForm());
                 primaryStage.setScene(scene);
                 primaryStage.setTitle("Балда (Клиент)");
                 primaryStage.show();
             } catch (IOException e) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Ошибка подключения");
-                alert.setHeaderText("Не удалось подключиться к серверу");
-                alert.setContentText(e.getMessage());
-                alert.showAndWait();
+                showErrorAlert("Ошибка подключения", "Не удалось подключиться к серверу", e.getMessage());
             }
         });
     }
@@ -95,27 +90,36 @@ public class BaldaApp extends Application {
         dialog.setTitle("Выбор игры");
         dialog.setHeaderText("Выберите существующую игру или создайте новую");
         dialog.setContentText("Игра:");
+        styleDialog(dialog.getDialogPane());
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(gameName -> {
+        dialog.showAndWait().ifPresent(gameName -> {
             try {
                 BaldaGame game;
                 if (gameName.equals("Новая игра")) {
+                    // Диалог ввода названия игры
                     TextInputDialog nameDialog = new TextInputDialog("Игра1");
                     nameDialog.setTitle("Новая игра");
                     nameDialog.setHeaderText("Введите название новой игры");
                     nameDialog.setContentText("Название:");
+                    styleDialog(nameDialog.getDialogPane());
 
                     Optional<String> nameResult = nameDialog.showAndWait();
                     if (nameResult.isPresent()) {
+                        // Диалог ввода стартового слова
                         TextInputDialog wordDialog = new TextInputDialog("балда");
                         wordDialog.setTitle("Стартовое слово");
-                        wordDialog.setHeaderText("Введите стартовое слово");
+                        wordDialog.setHeaderText("Введите стартовое слово (5 букв)");
                         wordDialog.setContentText("Слово:");
+                        styleDialog(wordDialog.getDialogPane());
 
                         Optional<String> wordResult = wordDialog.showAndWait();
                         if (wordResult.isPresent() && !wordResult.get().isEmpty()) {
-                            game = new BaldaGame(nameResult.get(), wordResult.get());
+                            String word = wordResult.get().toLowerCase();
+                            if (word.length() != 5) {
+                                showErrorAlert("Ошибка", "Слово должно содержать 5 букв", "");
+                                return;
+                            }
+                            game = new BaldaGame(nameResult.get(), word);
                         } else {
                             return;
                         }
@@ -125,7 +129,7 @@ public class BaldaApp extends Application {
                 } else {
                     game = gameSaver.loadGame(gameName);
                     if (game == null) {
-                        new Alert(Alert.AlertType.ERROR, "Не удалось загрузить игру", ButtonType.OK).showAndWait();
+                        showErrorAlert("Ошибка", "Не удалось загрузить игру", "");
                         return;
                     }
                 }
@@ -134,6 +138,19 @@ public class BaldaApp extends Application {
                 e.printStackTrace();
             }
         });
+    }
+
+    private void styleDialog(DialogPane dialogPane) {
+        dialogPane.getStylesheets().add(getClass().getResource("/dark-theme.css").toExternalForm());
+    }
+
+    private void showErrorAlert(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        styleDialog(alert.getDialogPane());
+        alert.showAndWait();
     }
 
     public static void main(String[] args) {
