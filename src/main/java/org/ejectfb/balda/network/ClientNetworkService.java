@@ -23,7 +23,7 @@ public class ClientNetworkService implements NetworkService {
     @Override
     public void connect(String address) throws IOException {
         try {
-            logger.log(Level.INFO, "Попытка подключения к серверу по адресу: {0}:5555", address);
+            logger.log(Level.INFO, "Попытка подключения к серверу по адресу: " + address + ":5555");
             socket = new Socket(address, 5555);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());

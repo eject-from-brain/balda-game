@@ -68,7 +68,7 @@ public class ServerNetworkService implements NetworkService {
     private void waitForConnection() {
         try {
             clientSocket = serverSocket.accept();
-            logger.log(Level.INFO, "Клиент подключен: {0}", clientSocket.getInetAddress());
+            logger.log(Level.INFO, "Клиент подключен: " + clientSocket.getInetAddress());
 
             out = new ObjectOutputStream(clientSocket.getOutputStream());
             in = new ObjectInputStream(clientSocket.getInputStream());
