@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 
 public class ClientNetworkService implements NetworkService {
     private static final Logger logger = Logger.getLogger(ClientNetworkService.class.getName());
-
+    private volatile boolean isFirstRun = true;
     private Socket socket;
     private ObjectOutputStream out;
     private ObjectInputStream in;
@@ -74,6 +74,11 @@ public class ClientNetworkService implements NetworkService {
                         gameStateListener.accept(gameState);
                     });
                 }
+
+                if (isFirstRun && gameState.isServerTurn()) { //так как в механике синк для клиента тоже ход, возвращаем ход
+                    sendGameState(gameState);
+                    isFirstRun = false;
+                } else isFirstRun = false;
             }
         } catch (Exception e) {
             if (isConnected) {
