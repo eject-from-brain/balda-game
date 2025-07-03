@@ -1,3 +1,81 @@
+/* ===== GameUI Specific Styles ===== */
+.game-container {
+    -fx-background-color: #1a1a1a;
+    -fx-padding: 20;
+}
+
+.game-title {
+    -fx-font-size: 42px;
+    -fx-fill: #FFA726;
+    -fx-font-family: 'Segoe UI Semibold', 'Roboto Medium', sans-serif;
+}
+
+.game-info {
+    -fx-font-size: 20px;
+    -fx-fill: #aaaaaa;
+}
+
+.player-info {
+    -fx-font-size: 18px;
+    -fx-fill: #e0e0e0;
+}
+
+.words-label {
+    -fx-font-size: 16px;
+    -fx-fill: white;
+}
+
+.word-list {
+    -fx-pref-width: 250px;
+    -fx-pref-height: 150px;
+    -fx-control-inner-background: #2d2d2d;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-border-color: #3d3d3d;
+    -fx-border-radius: 5;
+    -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.grid-cell {
+    -fx-min-width: 50px;
+    -fx-min-height: 50px;
+    -fx-font-size: 18px;
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: white;
+    -fx-border-color: #3d3d3d;
+    -fx-border-radius: 3;
+    -fx-font-family: 'Segoe UI', 'Roboto', sans-serif;
+    -fx-cursor: hand;
+}
+
+.grid-cell:hover {
+    -fx-background-color: #FFA726;
+    -fx-text-fill: #1a1a1a;
+    -fx-border-color: #FFA726;
+    -fx-font-weight: bold;
+}
+
+.grid-cell:empty:hover {
+    -fx-background-color: #FFA726;
+    -fx-text-fill: #1a1a1a;
+    -fx-border-color: #FFA726;
+}
+
+.save-button {
+    -fx-background-color: #FFA726;
+    -fx-text-fill: #1a1a1a;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 8 16;
+    -fx-background-radius: 5;
+}
+
+.watermark {
+    -fx-font-size: 10px;
+    -fx-fill: #333;
+    -fx-font-style: italic;
+}
+
 /* ===== Базовые стили ===== */
 .root {
     -fx-base: #1a1a1a;
