@@ -79,13 +79,7 @@ public class ServerNetworkService implements NetworkService {
             in = new ObjectInputStream(clientSocket.getInputStream());
             isClientConnected = true;
 
-            if (gameStateListener != null) {
-                Platform.runLater(() -> {
-                    BaldaGame game = new BaldaGame(currentGame.getGameName(), currentGame.getStartWord());
-                    game.setClientConnected(true);
-                    gameStateListener.accept(game);
-                });
-            }
+            sendGameState(currentGame);
 
             logger.info("Запуск потока для получения обновлений от клиента");
             new Thread(this::receiveUpdates).start();

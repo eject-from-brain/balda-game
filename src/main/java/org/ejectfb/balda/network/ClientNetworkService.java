@@ -66,7 +66,7 @@ public class ClientNetworkService implements NetworkService {
         try {
             while (isConnected) {
                 BaldaGame gameState = (BaldaGame) in.readObject();
-                gameState.setClientConnected(true); // Клиент всегда подключен, когда получает обновления
+                gameState.setClientConnected(true);
 
                 if (gameStateListener != null) {
                     Platform.runLater(() -> {

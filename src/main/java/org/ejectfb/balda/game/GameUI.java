@@ -264,6 +264,11 @@ public class GameUI {
         alert.showAndWait();
     }
 
+    public void updateGameState(BaldaGame newGameState) {
+        this.game = newGameState;
+        updateUI();
+    }
+
     public Pane getRoot() {
         // Возвращаем mainContainer вместо root
         StackPane mainContainer = new StackPane();

@@ -68,9 +68,16 @@ public class BaldaApp extends Application {
                 NetworkService networkService = new ClientNetworkService();
                 networkService.connect(ip);
 
-                String clientGameName = "Игра против " + ip;
-                BaldaGame game = new BaldaGame(clientGameName, "ЖДИ");
-                GameUI gameUI = new GameUI(game, networkService, false, null);
+                // Создаем временную игру, которая будет заменена при получении данных от сервера
+                BaldaGame tempGame = new BaldaGame("Ожидание сервера...", "ЖДИ");
+                GameUI gameUI = new GameUI(tempGame, networkService, false, null);
+
+                // Устанавливаем слушатель для получения обновлений от сервера
+                networkService.setGameStateListener(gameState -> {
+                    Platform.runLater(() -> {
+                        gameUI.updateGameState(gameState);
+                    });
+                });
 
                 Scene scene = new Scene(gameUI.getRoot(), 800, 700);
                 scene.getStylesheets().add(getClass().getResource("/dark-theme.css").toExternalForm());
