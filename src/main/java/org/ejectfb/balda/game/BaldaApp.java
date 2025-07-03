@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.ejectfb.balda.mode.ModeSelectionView;
 import org.ejectfb.balda.mode.ModeSelector;
@@ -69,7 +70,7 @@ public class BaldaApp extends Application {
                 networkService.connect(ip);
 
                 // Создаем временную игру, которая будет заменена при получении данных от сервера
-                BaldaGame tempGame = new BaldaGame("играем против " + ip, "ЖДИ");
+                BaldaGame tempGame = new BaldaGame("играем против " + ip, "балда");
                 GameUI gameUI = new GameUI(tempGame, networkService, false, null);
 
                 // Устанавливаем слушатель для получения обновлений от сервера
@@ -103,7 +104,6 @@ public class BaldaApp extends Application {
             try {
                 BaldaGame game;
                 if (gameName.equals("Новая игра")) {
-                    // Диалог ввода названия игры
                     TextInputDialog nameDialog = new TextInputDialog("Игра1");
                     nameDialog.setTitle("Новая игра");
                     nameDialog.setHeaderText("Введите название новой игры");
@@ -112,22 +112,30 @@ public class BaldaApp extends Application {
 
                     Optional<String> nameResult = nameDialog.showAndWait();
                     if (nameResult.isPresent()) {
-                        // Диалог ввода стартового слова
                         TextInputDialog wordDialog = new TextInputDialog("балда");
                         wordDialog.setTitle("Стартовое слово");
-                        wordDialog.setHeaderText("Введите стартовое слово (5 букв)");
-                        wordDialog.setContentText("Слово:");
+                        wordDialog.setHeaderText("Введите стартовое слово (5 русских букв)");
+
+                        TextField inputField = wordDialog.getEditor();
+                        Label hintLabel = new Label("Только 5 русских букв");
+                        hintLabel.getStyleClass().add("hint-label");
+                        wordDialog.getDialogPane().setContent(new VBox(5,
+                                new Label("Слово:"), inputField, hintLabel));
                         styleDialog(wordDialog.getDialogPane());
 
+                        Button okButton = (Button) wordDialog.getDialogPane().lookupButton(ButtonType.OK);
+                        okButton.setDisable(true);
+
+                        inputField.textProperty().addListener((observable, oldValue, newValue) -> {
+                            okButton.setDisable(!WordValidator.isValidStartWord(newValue));
+                        });
+
                         Optional<String> wordResult = wordDialog.showAndWait();
-                        if (wordResult.isPresent() && !wordResult.get().isEmpty()) {
+                        if (wordResult.isPresent() && WordValidator.isValidStartWord(wordResult.get())) {
                             String word = wordResult.get().toLowerCase();
-                            if (word.length() != 5) {
-                                showErrorAlert("Ошибка", "Слово должно содержать 5 букв", "");
-                                return;
-                            }
                             game = new BaldaGame(nameResult.get(), word);
                         } else {
+                            showErrorAlert("Ошибка", "Слово должно содержать ровно 5 русских букв", "");
                             return;
                         }
                     } else {
@@ -139,10 +147,17 @@ public class BaldaApp extends Application {
                         showErrorAlert("Ошибка", "Не удалось загрузить игру", "");
                         return;
                     }
+
+                    if (!WordValidator.isValidStartWord(game.getStartWord())) {
+                        showErrorAlert("Ошибка", "Некорректное стартовое слово в сохраненной игре", "");
+                        return;
+                    }
                 }
                 startServer(primaryStage, game);
             } catch (IOException e) {
-                e.printStackTrace();
+                showErrorAlert("Ошибка", "Не удалось создать игру", e.getMessage());
+            } catch (IllegalArgumentException e) {
+                showErrorAlert("Ошибка", "Некорректные параметры игры", e.getMessage());
             }
         });
     }

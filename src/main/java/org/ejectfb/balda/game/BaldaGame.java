@@ -25,8 +25,11 @@ public class BaldaGame implements Serializable {
     }
 
     private void initializeGrid() {
-        int minSize = Math.max(startWord.length() + 2, 5); // Размер сетки = длина слова + 2, но не меньше 5
-        gridSize = minSize;
+        if (!WordValidator.isValidStartWord(startWord)) {
+            throw new IllegalArgumentException("Стартовое слово должно содержать ровно 5 русских букв");
+        }
+
+        gridSize = Math.max(startWord.length() + 2, 5); // Размер сетки = длина слова + 2, но не меньше 5
         grid = new char[gridSize][gridSize];
 
         for (int i = 0; i < gridSize; i++) {
@@ -72,9 +75,11 @@ public class BaldaGame implements Serializable {
         if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
             return false;
         }
-        if (grid[x][y] != ' ') return false;
-        if (clientWords.contains(word) || serverWords.contains(word)) return false;
-        return true;
+        if (grid[x][y] != ' ') {
+            return false;
+        }
+
+        return WordValidator.isValidWord(grid, x, y, letter, word, serverWords, clientWords);
     }
 
     private void expandGridIfNeeded(int x, int y) {

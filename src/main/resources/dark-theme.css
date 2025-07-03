@@ -86,6 +86,11 @@
 }
 
 /* ===== Текстовые элементы ===== */
+.hint-label {
+    -fx-text-fill: #aaaaaa;
+    -fx-font-size: 11px;
+}
+
 .text,
 .label {
     -fx-text-fill: white;

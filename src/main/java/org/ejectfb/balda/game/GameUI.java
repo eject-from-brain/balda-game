@@ -161,6 +161,12 @@ public class GameUI {
         letterDialog.setContentText("Буква:");
         styleDialog(letterDialog.getDialogPane());
 
+        letterDialog.getEditor().textProperty().addListener((observable, oldValue, newValue) -> {
+            if (!newValue.matches("[а-яА-Я]?")) {
+                letterDialog.getEditor().setText(oldValue);
+            }
+        });
+
         Optional<String> letterResult = letterDialog.showAndWait();
         if (letterResult.isPresent() && letterResult.get().length() == 1) {
             char letter = letterResult.get().toUpperCase().charAt(0);
