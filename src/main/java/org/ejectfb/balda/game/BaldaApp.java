@@ -69,7 +69,7 @@ public class BaldaApp extends Application {
                 networkService.connect(ip);
 
                 // Создаем временную игру, которая будет заменена при получении данных от сервера
-                BaldaGame tempGame = new BaldaGame("Ожидание сервера...", "ЖДИ");
+                BaldaGame tempGame = new BaldaGame("играем против " + ip, "ЖДИ");
                 GameUI gameUI = new GameUI(tempGame, networkService, false, null);
 
                 // Устанавливаем слушатель для получения обновлений от сервера
