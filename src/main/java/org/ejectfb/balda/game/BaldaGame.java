@@ -147,6 +147,11 @@ public class BaldaGame implements Serializable {
         this.clientConnected = connected;
     }
 
+    public boolean isClientConnected() {
+        return clientConnected;
+    }
+
+
     public boolean isServerTurn() {
         return isServerTurn;
     }

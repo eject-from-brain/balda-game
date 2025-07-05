@@ -15,6 +15,7 @@ public class GameUI {
 
     private GridPane gameGrid;
     private BaldaGame game;
+    private Text gameInfo;
     private NetworkService networkService;
     private VBox root;
     private GameSaver gameSaver;
@@ -48,7 +49,7 @@ public class GameUI {
         Text title = new Text("БАЛДА");
         title.getStyleClass().add("game-title");
 
-        Text gameInfo = new Text("Игра: " + game.getGameName());
+        gameInfo = new Text("Игра: " + game.getGameName());
         gameInfo.getStyleClass().add("game-info");
 
         playerInfo = new Text();
@@ -113,6 +114,14 @@ public class GameUI {
 
         if (isServer) {
             playerInfo.setText(game.isServerTurn() ? "▶ Мой ход" : "⏸ Ход противника");
+
+            // Добавляем проверку подключения клиента
+            Text gameInfo = (Text) ((VBox) root.getChildren().get(0)).getChildren().get(1);
+            if (!game.isClientConnected()) {
+                gameInfo.setText("Ожидание подключения игрока");
+            } else {
+                gameInfo.setText("Игра: " + game.getGameName());
+            }
         } else {
             playerInfo.setText(game.isServerTurn() ? "⏸ Ход противника" : "▶ Мой ход");
         }
